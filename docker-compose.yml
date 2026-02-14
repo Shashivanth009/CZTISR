@@ -1,0 +1,110 @@
+version: '3.8'
+
+services:
+  # --- Data Layer ---
+  postgres:
+    image: postgres:15-alpine
+    container_name: c5isr-postgres
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: securepassword
+      POSTGRES_DB: c5isr_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - c5isr-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U admin -d c5isr_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: c5isr-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - c5isr-net
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Control Plane (Layer 0 & 1) ---
+  identity-service:
+    build:
+      context: ./backend
+      dockerfile: identity/Dockerfile
+    container_name: c5isr-identity
+    environment:
+      DATABASE_URL: postgresql://admin:securepassword@postgres:5432/c5isr_db
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: supersecretkey
+      SMTP_EMAIL: ${SMTP_EMAIL:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    ports:
+      - "8001:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - c5isr-net
+
+  # --- Policy Enforcement & Gateway (Layer 2) ---
+  gateway-service:
+    build:
+      context: ./backend
+      dockerfile: gateway/Dockerfile
+    container_name: c5isr-gateway
+    environment:
+      IDENTITY_SERVICE_URL: http://identity-service:8000
+      REDIS_URL: redis://redis:6379/0
+      SECRET_KEY: supersecretkey
+    ports:
+      - "8020:8000"
+    depends_on:
+      identity-service:
+        condition: service_started
+      redis:
+        condition: service_healthy
+    networks:
+      - c5isr-net
+
+  # --- Cyber Defense & Simulation (Layer 3) ---
+  defense-service:
+    build:
+      context: ./backend
+      dockerfile: defense/Dockerfile
+    container_name: c5isr-defense
+    environment:
+      DATABASE_URL: postgresql://admin:securepassword@postgres:5432/c5isr_db
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      gateway-service:
+        condition: service_started
+    networks:
+      - c5isr-net
+
+  simulation-service:
+    build:
+      context: ./backend
+      dockerfile: simulation/Dockerfile
+    container_name: c5isr-simulation
+    environment:
+      GATEWAY_URL: http://gateway-service:8000
+    networks:
+      - c5isr-net
+
+volumes:
+  postgres_data:
+
+
+networks:
+  c5isr-net:
+    driver: bridge
