@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Server, Cpu, HardDrive, Shield, Lock, RefreshCw } from 'lucide-react';
+import { GlassExpand } from './GlassExpand';
+import { config } from '../config';
 
 interface Props { token: string; }
 
@@ -9,7 +11,7 @@ export const InfrastructureView = ({ token }: Props) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const resp = await fetch('http://localhost:8020/api/infrastructure');
+                const resp = await fetch(`${config.gatewayUrl}/api/infrastructure`);
                 setData(await resp.json());
             } catch (e) { console.error('Infra fetch error', e); }
         };
@@ -54,57 +56,59 @@ export const InfrastructureView = ({ token }: Props) => {
             </div>
 
             {/* Service Grid */}
-            <div className="glass-panel p-5 rounded">
-                <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                    <Server size={16} className="text-cyber-neon" /> ZERO TRUST SERVICE MESH
-                </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {data?.services?.map((svc: any) => (
-                        <div key={svc.name} className="border border-cyber-slate/30 bg-black/50 p-4 rounded hover:border-cyber-neon/30 transition-all">
-                            <div className="flex justify-between items-start mb-2">
-                                <div>
-                                    <div className="flex items-center gap-2">
-                                        <div className={`w-2 h-2 rounded-full ${svc.status === 'HEALTHY' ? 'bg-cyber-neon animate-pulse' : 'bg-cyber-red'}`}></div>
-                                        <span className="text-xs font-bold text-white">{svc.name}</span>
+            <GlassExpand title="ZERO TRUST SERVICE MESH">
+                <div className="glass-panel p-5 rounded">
+                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                        <Server size={16} className="text-cyber-neon" /> ZERO TRUST SERVICE MESH
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {data?.services?.map((svc: any) => (
+                            <div key={svc.name} className="border border-cyber-slate/30 bg-black/50 p-4 rounded hover:border-cyber-neon/30 transition-all">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                            <div className={`w-2 h-2 rounded-full ${svc.status === 'HEALTHY' ? 'bg-cyber-neon animate-pulse' : 'bg-cyber-red'}`}></div>
+                                            <span className="text-xs font-bold text-white">{svc.name}</span>
+                                        </div>
+                                        <span className="text-[10px] text-gray-500 ml-4">{svc.layer}</span>
                                     </div>
-                                    <span className="text-[10px] text-gray-500 ml-4">{svc.layer}</span>
+                                    <span className="text-[10px] text-gray-500 font-mono">:{svc.port}</span>
                                 </div>
-                                <span className="text-[10px] text-gray-500 font-mono">:{svc.port}</span>
-                            </div>
 
-                            {/* Resource Bars */}
-                            <div className="space-y-2 mt-3">
-                                <div>
-                                    <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                                        <span className="flex items-center gap-1"><Cpu size={9} /> CPU</span>
-                                        <span>{svc.cpu}%</span>
+                                {/* Resource Bars */}
+                                <div className="space-y-2 mt-3">
+                                    <div>
+                                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                                            <span className="flex items-center gap-1"><Cpu size={9} /> CPU</span>
+                                            <span>{svc.cpu}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-gray-800 rounded overflow-hidden">
+                                            <div className={`h-full rounded transition-all duration-1000 ${svc.cpu > 60 ? 'bg-cyber-red' : svc.cpu > 40 ? 'bg-cyber-yellow' : 'bg-cyber-neon'
+                                                }`} style={{ width: `${svc.cpu}%` }}></div>
+                                        </div>
                                     </div>
-                                    <div className="w-full h-1.5 bg-gray-800 rounded overflow-hidden">
-                                        <div className={`h-full rounded transition-all duration-1000 ${svc.cpu > 60 ? 'bg-cyber-red' : svc.cpu > 40 ? 'bg-cyber-yellow' : 'bg-cyber-neon'
-                                            }`} style={{ width: `${svc.cpu}%` }}></div>
+                                    <div>
+                                        <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                                            <span className="flex items-center gap-1"><HardDrive size={9} /> MEM</span>
+                                            <span>{svc.memory}%</span>
+                                        </div>
+                                        <div className="w-full h-1.5 bg-gray-800 rounded overflow-hidden">
+                                            <div className={`h-full rounded transition-all duration-1000 ${svc.memory > 70 ? 'bg-cyber-red' : svc.memory > 50 ? 'bg-cyber-yellow' : 'bg-cyber-blue'
+                                                }`} style={{ width: `${svc.memory}%` }}></div>
+                                        </div>
                                     </div>
                                 </div>
-                                <div>
-                                    <div className="flex justify-between text-[10px] text-gray-500 mb-1">
-                                        <span className="flex items-center gap-1"><HardDrive size={9} /> MEM</span>
-                                        <span>{svc.memory}%</span>
-                                    </div>
-                                    <div className="w-full h-1.5 bg-gray-800 rounded overflow-hidden">
-                                        <div className={`h-full rounded transition-all duration-1000 ${svc.memory > 70 ? 'bg-cyber-red' : svc.memory > 50 ? 'bg-cyber-yellow' : 'bg-cyber-blue'
-                                            }`} style={{ width: `${svc.memory}%` }}></div>
-                                    </div>
-                                </div>
-                            </div>
 
-                            <div className="flex justify-between mt-3 text-[10px] text-gray-500">
-                                <span>Protocol: {svc.protocol}</span>
-                                <span>Uptime: {svc.uptime}%</span>
+                                <div className="flex justify-between mt-3 text-[10px] text-gray-500">
+                                    <span>Protocol: {svc.protocol}</span>
+                                    <span>Uptime: {svc.uptime}%</span>
+                                </div>
+                                <div className="text-[10px] text-gray-600 mt-1">Requests/hr: {svc.requests_1h?.toLocaleString()}</div>
                             </div>
-                            <div className="text-[10px] text-gray-600 mt-1">Requests/hr: {svc.requests_1h?.toLocaleString()}</div>
-                        </div>
-                    ))}
+                        ))}
+                    </div>
                 </div>
-            </div>
+            </GlassExpand>
         </div>
     );
 };

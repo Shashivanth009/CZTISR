@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Shield, AlertTriangle, Database, Plane, Ship, Truck, Wifi, WifiOff } from 'lucide-react';
+import { GlassExpand } from './GlassExpand';
+import { config } from '../config';
 
 interface Props { token: string; }
 
@@ -12,7 +14,7 @@ export const CommanderDashboard = ({ token }: Props) => {
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const resp = await fetch('http://localhost:8020/api/system-status');
+                const resp = await fetch(`${config.gatewayUrl}/api/system-status`);
                 const data = await resp.json();
                 setStats(data);
             } catch (e) { console.error('Stats fetch error', e); }
@@ -28,7 +30,7 @@ export const CommanderDashboard = ({ token }: Props) => {
         let reconnectTimer: ReturnType<typeof setTimeout>;
 
         const connect = () => {
-            socket = new WebSocket('ws://localhost:8020/ws/telemetry');
+            socket = new WebSocket(`${config.wsGatewayUrl}/ws/telemetry`);
             socket.onopen = () => setConnected(true);
             socket.onmessage = (event) => {
                 try {
@@ -79,51 +81,55 @@ export const CommanderDashboard = ({ token }: Props) => {
 
             {/* Battlespace + Intel */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="glass-panel p-5 rounded lg:col-span-2 min-h-[360px] relative overflow-hidden">
-                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                        <Database size={16} className="text-cyber-neon" /> LIVE BATTLESPACE
-                    </h3>
-                    <div className="absolute inset-0 bg-grid opacity-10 pointer-events-none"></div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 relative z-10">
-                        {Object.values(assets).map((a: any) => (
-                            <div key={a.id} className="border border-cyber-slate/50 bg-black/70 p-3 rounded hover:border-cyber-neon/50 transition-all">
-                                <div className="flex justify-between items-center text-xs">
-                                    <span className="text-gray-400 flex items-center gap-1">{getAssetIcon(a.id)} {a.id}</span>
-                                    <span className={getStatusColor(a.status)}>{a.status}</span>
+                <GlassExpand title="LIVE BATTLESPACE">
+                    <div className="glass-panel p-5 rounded lg:col-span-2 min-h-[360px] relative overflow-hidden">
+                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                            <Database size={16} className="text-cyber-neon" /> LIVE BATTLESPACE
+                        </h3>
+                        <div className="absolute inset-0 bg-grid opacity-10 pointer-events-none"></div>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 relative z-10">
+                            {Object.values(assets).map((a: any) => (
+                                <div key={a.id} className="border border-cyber-slate/50 bg-black/70 p-3 rounded hover:border-cyber-neon/50 transition-all">
+                                    <div className="flex justify-between items-center text-xs">
+                                        <span className="text-gray-400 flex items-center gap-1">{getAssetIcon(a.id)} {a.id}</span>
+                                        <span className={getStatusColor(a.status)}>{a.status}</span>
+                                    </div>
+                                    <div className="text-xs font-mono text-white mt-1">{a.lat?.toFixed(4)}, {a.lng?.toFixed(4)}</div>
+                                    <div className="w-full h-1 bg-gray-800 mt-2 rounded overflow-hidden">
+                                        <div className="h-full bg-cyber-blue transition-all duration-1000" style={{ width: `${a.fuel}%` }}></div>
+                                    </div>
+                                    <div className="text-[10px] text-gray-500 mt-1">FUEL: {a.fuel?.toFixed(0)}%</div>
                                 </div>
-                                <div className="text-xs font-mono text-white mt-1">{a.lat?.toFixed(4)}, {a.lng?.toFixed(4)}</div>
-                                <div className="w-full h-1 bg-gray-800 mt-2 rounded overflow-hidden">
-                                    <div className="h-full bg-cyber-blue transition-all duration-1000" style={{ width: `${a.fuel}%` }}></div>
+                            ))}
+                            {Object.keys(assets).length === 0 && (
+                                <div className="col-span-3 text-center text-gray-500 animate-pulse py-16">
+                                    ESTABLISHING SATELLITE UPLINK...
                                 </div>
-                                <div className="text-[10px] text-gray-500 mt-1">FUEL: {a.fuel?.toFixed(0)}%</div>
-                            </div>
-                        ))}
-                        {Object.keys(assets).length === 0 && (
-                            <div className="col-span-3 text-center text-gray-500 animate-pulse py-16">
-                                ESTABLISHING SATELLITE UPLINK...
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
-                </div>
+                </GlassExpand>
 
-                <div className="glass-panel p-5 rounded">
-                    <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
-                        <AlertTriangle size={16} className="text-cyber-red" /> SIGNAL INTEL
-                    </h3>
-                    <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
-                        {Object.values(assets).slice(0, 10).map((a: any, i: number) => (
-                            <div key={`${a.id}-${i}`} className="p-2 border-b border-cyber-slate/20 text-xs font-mono">
-                                <div className="flex justify-between text-gray-500">
-                                    <span>TS::{new Date().toLocaleTimeString()}</span>
-                                    <span className="text-cyber-blue">UPDATED</span>
+                <GlassExpand title="SIGNAL INTEL">
+                    <div className="glass-panel p-5 rounded">
+                        <h3 className="text-sm font-bold text-white mb-4 flex items-center gap-2">
+                            <AlertTriangle size={16} className="text-cyber-red" /> SIGNAL INTEL
+                        </h3>
+                        <div className="space-y-2 max-h-[320px] overflow-y-auto pr-1 custom-scrollbar">
+                            {Object.values(assets).slice(0, 10).map((a: any, i: number) => (
+                                <div key={`${a.id}-${i}`} className="p-2 border-b border-cyber-slate/20 text-xs font-mono">
+                                    <div className="flex justify-between text-gray-500">
+                                        <span>TS::{new Date().toLocaleTimeString()}</span>
+                                        <span className="text-cyber-blue">UPDATED</span>
+                                    </div>
+                                    <div className="text-gray-300 mt-1">
+                                        <span className="text-white">{a.id}</span> :: <span className={getStatusColor(a.status)}>{a.status}</span>
+                                    </div>
                                 </div>
-                                <div className="text-gray-300 mt-1">
-                                    <span className="text-white">{a.id}</span> :: <span className={getStatusColor(a.status)}>{a.status}</span>
-                                </div>
-                            </div>
-                        ))}
+                            ))}
+                        </div>
                     </div>
-                </div>
+                </GlassExpand>
             </div>
         </div>
     );

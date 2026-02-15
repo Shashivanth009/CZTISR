@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FileSearch, Eye, Radio, Globe, Satellite, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { GlassExpand } from './GlassExpand';
+import { config } from '../config';
 
 interface Props { token: string; }
 
@@ -13,7 +15,7 @@ export const Intelligence = ({ token }: Props) => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const resp = await fetch('http://localhost:8020/api/intelligence');
+                const resp = await fetch(`${config.gatewayUrl}/api/intelligence`);
                 setData(await resp.json());
             } catch (e) { console.error('Intel fetch error', e); }
         };
@@ -77,48 +79,50 @@ export const Intelligence = ({ token }: Props) => {
                 {data?.reports?.map((report: any) => {
                     const Icon = SOURCE_ICONS[report.source] || FileSearch;
                     return (
-                        <div key={report.id} className="glass-panel p-5 rounded hover:border-cyber-neon/30 transition-all">
-                            <div className="flex justify-between items-start mb-2">
-                                <div className="flex items-center gap-3">
-                                    <div className="w-10 h-10 border border-cyber-slate/50 rounded flex items-center justify-center bg-black/40">
-                                        <Icon size={18} className="text-cyber-neon" />
-                                    </div>
-                                    <div>
-                                        <div className="flex items-center gap-2">
-                                            <span className="text-xs font-bold text-white">{report.title}</span>
+                        <GlassExpand key={report.id} title={report.title}>
+                            <div className="glass-panel p-5 rounded hover:border-cyber-neon/30 transition-all">
+                                <div className="flex justify-between items-start mb-2">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 border border-cyber-slate/50 rounded flex items-center justify-center bg-black/40">
+                                            <Icon size={18} className="text-cyber-neon" />
                                         </div>
-                                        <div className="flex items-center gap-2 mt-1">
-                                            <span className="text-[10px] text-gray-500 font-mono">{report.id}</span>
-                                            <span className={`text-[10px] px-2 py-0.5 rounded ${getClassColor(report.classification)}`}>{report.classification}</span>
-                                            <span className="text-[10px] text-gray-500">{report.source}</span>
+                                        <div>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs font-bold text-white">{report.title}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[10px] text-gray-500 font-mono">{report.id}</span>
+                                                <span className={`text-[10px] px-2 py-0.5 rounded ${getClassColor(report.classification)}`}>{report.classification}</span>
+                                                <span className="text-[10px] text-gray-500">{report.source}</span>
+                                            </div>
                                         </div>
                                     </div>
+                                    <div className="flex items-center gap-2">
+                                        {getStatusIcon(report.status)}
+                                        <span className="text-[10px] text-gray-400">{report.status}</span>
+                                    </div>
                                 </div>
-                                <div className="flex items-center gap-2">
-                                    {getStatusIcon(report.status)}
-                                    <span className="text-[10px] text-gray-400">{report.status}</span>
-                                </div>
-                            </div>
 
-                            <p className="text-xs text-gray-400 mt-3 mb-3 pl-[52px]">{report.summary}</p>
+                                <p className="text-xs text-gray-400 mt-3 mb-3 pl-[52px]">{report.summary}</p>
 
-                            <div className="flex justify-between items-center pl-[52px]">
-                                <div className="flex gap-4 text-[10px] text-gray-500">
-                                    <span>Analyst: {report.analyst}</span>
-                                    <span>{report.timestamp?.slice(11, 16)}</span>
-                                </div>
-                                {/* Confidence Bar */}
-                                <div className="flex items-center gap-2">
-                                    <span className="text-[10px] text-gray-500">CONFIDENCE</span>
-                                    <div className="w-20 h-2 bg-gray-800 rounded overflow-hidden">
-                                        <div className={`h-full rounded transition-all ${report.confidence > 80 ? 'bg-cyber-neon' :
+                                <div className="flex justify-between items-center pl-[52px]">
+                                    <div className="flex gap-4 text-[10px] text-gray-500">
+                                        <span>Analyst: {report.analyst}</span>
+                                        <span>{report.timestamp?.slice(11, 16)}</span>
+                                    </div>
+                                    {/* Confidence Bar */}
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-[10px] text-gray-500">CONFIDENCE</span>
+                                        <div className="w-20 h-2 bg-gray-800 rounded overflow-hidden">
+                                            <div className={`h-full rounded transition-all ${report.confidence > 80 ? 'bg-cyber-neon' :
                                                 report.confidence > 60 ? 'bg-cyber-yellow' : 'bg-cyber-red'
-                                            }`} style={{ width: `${report.confidence}%` }}></div>
+                                                }`} style={{ width: `${report.confidence}%` }}></div>
+                                        </div>
+                                        <span className="text-[10px] text-white">{report.confidence}%</span>
                                     </div>
-                                    <span className="text-[10px] text-white">{report.confidence}%</span>
                                 </div>
                             </div>
-                        </div>
+                        </GlassExpand>
                     );
                 })}
             </div>

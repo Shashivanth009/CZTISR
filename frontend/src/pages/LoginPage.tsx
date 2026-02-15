@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { config } from '../config';
 import { Shield, Lock, AlertTriangle, CheckCircle, Fingerprint, Key, Smartphone } from 'lucide-react';
 
 interface LoginPageProps {
@@ -53,7 +54,7 @@ export const LoginPage = ({ onLogin }: LoginPageProps) => {
             formData.append('username', username);
             formData.append('password', password);
 
-            const resp = await fetch('http://localhost:8001/auth/step1', {
+            const resp = await fetch(`${config.identityUrl}/auth/step1`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
                 body: formData,
@@ -88,7 +89,7 @@ export const LoginPage = ({ onLogin }: LoginPageProps) => {
         setLoading(true);
 
         try {
-            const resp = await fetch('http://localhost:8001/auth/step2', {
+            const resp = await fetch(`${config.identityUrl}/auth/step2`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -206,9 +207,7 @@ export const LoginPage = ({ onLogin }: LoginPageProps) => {
                                 <span className="flex items-center justify-center gap-2"><Key size={14} /> VERIFY IDENTITY</span>
                             )}
                         </button>
-                        <div className="text-center text-[10px] text-gray-600 mt-2">
-                            Credentials: commander / analyst / redteam — password: <span className="text-gray-500">password</span>
-                        </div>
+
                     </form>
                 )}
 

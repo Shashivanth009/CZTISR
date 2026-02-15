@@ -1,0 +1,44 @@
+# Render.com Blueprint — C5ISR Zero Trust Backend
+# https://render.com/docs/infrastructure-as-code
+
+databases:
+  - name: c5isr-postgres
+    plan: free
+    databaseName: c5isr
+    user: c5isr
+
+services:
+  # Identity Service (Auth / TOTP)
+  - type: web
+    name: c5isr-identity
+    runtime: docker
+    dockerfilePath: ./backend/identity/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: c5isr-postgres
+          property: connectionURI
+      - key: REDIS_URL
+        value: "" # optional, set manually if Redis is added
+      - key: JWT_SECRET
+        generateValue: true
+    healthCheckPath: /health
+
+  # Gateway Service (API Gateway + WebSocket)
+  - type: web
+    name: c5isr-gateway
+    runtime: docker
+    dockerfilePath: ./backend/gateway/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: IDENTITY_SERVICE_URL
+        fromService:
+          name: c5isr-identity
+          type: web
+          property: hostport
+      - key: REDIS_URL
+        value: "" # optional, set manually if Redis is added
+    healthCheckPath: /health
