@@ -102,6 +102,30 @@ class AssetSimulator:
             
             await asyncio.sleep(1) # Frequency
 
+async def simulate_traffic():
+    """Generates background traffic for Audit Log visualization"""
+    users = ["Gen. Shepard", "Col. Hayes", "Maj. Chen", "Lt. Dan", "Analyst Jack"]
+    endpoints = ["/api/missions", "/api/intel", "/api/comms", "/api/surveillance", "/api/infra"]
+    
+    while True:
+        await asyncio.sleep(random.uniform(3, 8))
+        
+        user = random.choice(users)
+        endpoint = random.choice(endpoints)
+        
+        # 90% Valid Traffic
+        if random.random() > 0.1:
+            log_event(user, "ACCESS", endpoint, "PERMIT", "Authorized via RBAC")
+        else:
+            # 10% Invalid Traffic / Security Events
+            type_ = random.choice(["AUTH_FAIL", "POLICY_DENY", "GEO_BLOCK"])
+            if type_ == "AUTH_FAIL":
+                log_event("UNKNOWN", "AUTH", "/login", "DENY", "Invalid Credentials from 192.168.1.x")
+            elif type_ == "POLICY_DENY":
+                log_event(user, "ACCESS", "/api/admin", "DENY", "Insufficient Clearance (TOP_SECRET required)")
+            elif type_ == "GEO_BLOCK":
+                log_event("UNKNOWN", "ACCESS", endpoint, "DENY", "Access denied from restricted region")
+
 @app.on_event("startup")
 async def startup_event():
     # Start Standalone Simulation since we don't have external Redis/Sim service
@@ -112,7 +136,8 @@ async def startup_event():
     asyncio.create_task(land_sim.run())
     asyncio.create_task(air_sim.run())
     asyncio.create_task(naval_sim.run())
-    print("Standalone Simulation Engine Started")
+    asyncio.create_task(simulate_traffic())
+    print("Standalone Simulation Engine & Traffic Generator Started")
 
 # ========================================================
 #  IN-MEMORY STORES
