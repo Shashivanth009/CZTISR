@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell } from 'recharts';
-import { Terminal, Lock, Shield, Activity } from 'lucide-react';
+import { Terminal, Shield, Activity } from 'lucide-react';
 import { GlassExpand } from './GlassExpand';
 import { config } from '../config';
 

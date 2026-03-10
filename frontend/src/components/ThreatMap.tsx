@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { Shield, AlertTriangle, Target, Bug } from 'lucide-react';
+import { AlertTriangle, Target, Bug } from 'lucide-react';
 import { GlassExpand } from './GlassExpand';
 import { config } from '../config';
 

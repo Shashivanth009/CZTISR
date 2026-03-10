@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Eye, Radar, Plane, Ship, Satellite, Crosshair, Camera, Radio } from 'lucide-react';
+import { Eye, Radar, Plane, Satellite, Crosshair, Camera, Radio } from 'lucide-react';
 import { GlassExpand } from './GlassExpand';
 import { config } from '../config';
 
