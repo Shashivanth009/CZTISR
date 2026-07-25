@@ -21,6 +21,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 MAX_LOGIN_ATTEMPTS = 5
 LOCKOUT_DURATION_SECONDS = 300
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "localhost,127.0.0.1,.vercel.app,.onrender.com").split(",")
 
 app = FastAPI(title="Identity Service (Layer 0) — C5ISR IDP")
 
@@ -144,16 +145,26 @@ def evaluate_device_trust(request: Request) -> dict:
     score = 50
     factors = []
 
-    if "Chrome" in ua or "Firefox" in ua or "Safari" in ua:
+    # 1. Known Browser / Client User-Agent
+    if any(b in ua for b in ["Chrome", "Firefox", "Safari", "Edge"]):
         score += 15
         factors.append({"factor": "Known Browser", "impact": "+15", "status": "PASS"})
     else:
         score -= 10
-        factors.append({"factor": "Unknown Browser", "impact": "-10", "status": "WARN"})
+        factors.append({"factor": "Unrecognized Client", "impact": "-10", "status": "WARN"})
 
-    score += 10
-    factors.append({"factor": "Transport Security", "impact": "+10", "status": "PASS"})
+    # 2. Transport Security (TLS / HTTPS via Reverse Proxy headers)
+    proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    origin_header = request.headers.get("origin", "") or request.headers.get("host", "")
+    
+    if proto == "https" or "localhost" in origin_header or "127.0.0.1" in origin_header:
+        score += 10
+        factors.append({"factor": "Transport Security (TLS)", "impact": "+10", "status": "PASS"})
+    else:
+        score -= 10
+        factors.append({"factor": "Insecure Transport (HTTP)", "impact": "-10", "status": "WARN"})
 
+    # 3. Access Time Window (Normal Operating Hours)
     hour = datetime.utcnow().hour
     if 6 <= hour <= 22:
         score += 10
@@ -162,8 +173,9 @@ def evaluate_device_trust(request: Request) -> dict:
         score -= 15
         factors.append({"factor": "Off-Hours Access", "impact": "-15", "status": "WARN"})
 
-    origin = request.headers.get("origin", "")
-    if "localhost" in origin or "127.0.0.1" in origin:
+    # 4. Production & Development Allowed Origin Matching
+    is_trusted_origin = any(domain.strip() in origin_header for domain in ALLOWED_ORIGINS if domain.strip())
+    if is_trusted_origin:
         score += 15
         factors.append({"factor": "Trusted Origin", "impact": "+15", "status": "PASS"})
     else:
