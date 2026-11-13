@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🛡️ UNABATE Zero Trust Platform
+# 🛡️ CZTISR Zero Trust Platform
 
 ### Military-Grade Command & Control Dashboard Built on Zero Trust Architecture
 *Real-Time Situational Awareness • Bell-LaPadula MLS • Dynamic TOTP MFA • NIST SP 800-207*
